@@ -36,10 +36,23 @@ defmodule Tapestry.CLI do
     # Call Brouting build function
     Tapestry.Modules.encrypt_multiple(node_pids)
 
-    all_hash_list = Enum.reduce(node_pids,[], fn n, acc -> acc ++ [Enum.map(:ets.lookup(:pid_to_node, n), fn {no, hash} -> hash end)] end)
+    # Construct a global list of all the hashed pids
+    all_hash_list = Enum.reduce(node_pids,[], fn n, acc -> acc ++ [Enum.map(:ets.lookup(:pid_to_node, n), fn {_, hash} -> hash end)] end)
     all_hash_list = List.flatten(all_hash_list)
+
+    # Construct a list of each nodes with probable neighbours
     neighbours = Tapestry.Modules.build_routing(all_hash_list)
-    # IO.inspect neighbours
+
+    #IO.inspect neighbours
+    # Assign neighbours to each node
+    Enum.each(neighbours, fn {node, routing} ->
+      pid = Enum.map(:ets.lookup(:node_to_pid, node), fn {_, pid} -> pid end)
+      GenServer.call(Enum.at(pid, 0), {:set_routing, routing})
+      # IO.inspect(node)
+      # IO.inspect(routing)
+    end)
+
+
   end
 
   defp print_help_msg do

@@ -2,7 +2,8 @@ defmodule Tapestry.Supervisor do
     use Supervisor
 
     @default_node_state %{
-        counter: 0
+        counter: 0,
+        routing_table: %{}
     }
 
     def start_link(opts) do
