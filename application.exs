@@ -1,0 +1,1 @@
+Tapestry.CLI.main()
