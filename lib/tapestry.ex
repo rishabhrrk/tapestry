@@ -18,7 +18,7 @@ defmodule Tapestry.CLI do
 
     numNodes = args |> Enum.at(0) |> String.to_integer
 
-    numRequests = Enum.at(args, 1)
+    numRequests = Enum.at(args, 1) |> String.to_integer
 
     # Start all nodes
     Tapestry.Supervisor.start_link(numNodes)
@@ -33,26 +33,60 @@ defmodule Tapestry.CLI do
     # Create a global ets for node_id to pid mapping
     :ets.new(:node_to_pid, [:set, :public, :named_table])
 
+    # Create a global ets for maintaining the qhops
+    :ets.new(:hops, [:set, :public, :named_table])
+    :ets.insert(:hops, {"counter",0})
+
+
     # Call Brouting build function
     Tapestry.Modules.encrypt_multiple(node_pids)
 
     # Construct a global list of all the hashed pids
-    all_hash_list = Enum.reduce(node_pids,[], fn n, acc -> acc ++ [Enum.map(:ets.lookup(:pid_to_node, n), fn {_, hash} -> hash end)] end)
+    all_hash_list = Enum.reduce(node_pids,[], fn n, acc -> acc ++
+        [Enum.map(:ets.lookup(:pid_to_node, n), fn {_, hash} -> hash end)] end)
     all_hash_list = List.flatten(all_hash_list)
 
     # Construct a list of each nodes with probable neighbours
     neighbours = Tapestry.Modules.build_routing(all_hash_list)
 
-    #IO.inspect neighbours
     # Assign neighbours to each node
     Enum.each(neighbours, fn {node, routing} ->
       pid = Enum.map(:ets.lookup(:node_to_pid, node), fn {_, pid} -> pid end)
       GenServer.call(Enum.at(pid, 0), {:set_routing, routing})
-      # IO.inspect(node)
-      # IO.inspect(routing)
     end)
 
-
+    # Construct a list of all hops between all source and all destination
+    counter_list = []
+    counter_list = counter_list ++ List.flatten(
+      # Select one node from list of nodes to start sending messages
+      # this node will be source
+      Enum.map(node_pids, fn pid ->
+        # Construct a list of all hops between one source and one destination
+          intermediate_list = []
+          # Randomly select numRequests nodes from the list as destinations
+          counter_each_request = Enum.map(1..numRequests, fn _n ->
+            # Set the counter to be zero in the beginning,
+                :ets.insert(:hops, {"counter", 0})
+            # Select a destination randomly
+                destination_list = node_pids
+                  |> Enum.reject(&(&1 == pid))
+                random_destination =
+                  Enum.random(destination_list)
+                destination = :ets.lookup(:pid_to_node,
+                  random_destination)
+                [{_, destination_hash}] = destination
+            # Call worker node with a destination as message
+                GenServer.call(pid, {:destination, destination_hash})
+            # Lookup the counter to store in the intermediate list
+                [Enum.at(Enum.map(:ets.lookup(:hops, "counter"),
+                           fn {_, count} -> count end),0)]
+                            end)
+                intermediate_list = intermediate_list ++
+                  List.flatten(counter_each_request)
+                intermediate_list
+      end))
+    IO.puts "Max Hops: "
+    IO.inspect Enum.max(counter_list)
   end
 
   defp print_help_msg do
