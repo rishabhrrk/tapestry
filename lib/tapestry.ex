@@ -46,13 +46,13 @@ defmodule Tapestry.CLI do
       hash
     end)
 
-    # Construct a list of each nodes with probable neighbours
-    neighbours = Tapestry.Modules.build_routing(all_hash_list)
+    # Construct the routing tables from the hash list
+    routing_tables = Tapestry.Modules.build_routing(all_hash_list)
 
-    # Assign neighbours to each node
-    Enum.each(neighbours, fn {node, routing} ->
-      pid = Enum.map(:ets.lookup(:node_to_pid, node), fn {_, pid} -> pid end)
-      GenServer.call(Enum.at(pid, 0), {:set_routing, routing})
+    # Set the routing table in the state of each node
+    Enum.each(routing_tables, fn {node, routing_table} ->
+      [{_node, pid}] = :ets.lookup(:node_to_pid, node)
+      GenServer.call(pid, {:set_routing_table, routing_table})
     end)
 
     # Construct a list of all hops between all source and all destination

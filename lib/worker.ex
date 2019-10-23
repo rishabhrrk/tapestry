@@ -14,7 +14,7 @@ defmodule Tapestry.Node do
   Sets routing table for q node in its state
   """
   @impl true
-  def handle_call({:set_routing, routing}, _from, state) do
+  def handle_call({:set_routing_table, routing}, _from, state) do
     # update map of routing table in the state
     state = Map.put(state, :routing_table, routing)
     # IO.inspect(state)
