@@ -25,7 +25,7 @@ defmodule Tapestry.CLI do
 
     # Get all nodes' pids
     node_pids = Supervisor.which_children(Tapestry.Supervisor)
-        |> Enum.map(fn {_, pid, :worker, [Tapestry.Node]} -> pid end)
+      |> Enum.map(fn {_, pid, :worker, [Tapestry.Node]} -> pid end)
 
     # Create a global ets for pid to node_id mapping
     :ets.new(:pid_to_node, [:set, :public, :named_table])
@@ -33,13 +33,12 @@ defmodule Tapestry.CLI do
     # Create a global ets for node_id to pid mapping
     :ets.new(:node_to_pid, [:set, :public, :named_table])
 
-    # Create a global ets for maintaining the qhops
+    # Create a global ets for maintaining the number of hops
     :ets.new(:hops, [:set, :public, :named_table])
     :ets.insert(:hops, {"counter",0})
 
-
-    # Call Brouting build function
-    Tapestry.Modules.encrypt_multiple(node_pids)
+    # Populate the global ets' :pid_to_node and :node_to_pid
+    Tapestry.Modules.encode_multiple(node_pids)
 
     # Construct a global list of all the hashed pids
     all_hash_list = Enum.reduce(node_pids,[], fn n, acc -> acc ++
