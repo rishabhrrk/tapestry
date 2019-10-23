@@ -16,12 +16,12 @@ defmodule Tapestry.CLI do
       exit :shutdown
     end
 
-    numNodes = args |> Enum.at(0) |> String.to_integer
+    node_nodes = args |> Enum.at(0) |> String.to_integer
 
-    numRequests = Enum.at(args, 1) |> String.to_integer
+    num_requests = Enum.at(args, 1) |> String.to_integer
 
     # Start all nodes
-    Tapestry.Supervisor.start_link(numNodes)
+    Tapestry.Supervisor.start_link(num_nodes)
 
     # Get all nodes' pids
     node_pids = Supervisor.which_children(Tapestry.Supervisor)
@@ -63,8 +63,8 @@ defmodule Tapestry.CLI do
       Enum.map(node_pids, fn pid ->
         # Construct a list of all hops between one source and one destination
           intermediate_list = []
-          # Randomly select numRequests nodes from the list as destinations
-          counter_each_request = Enum.map(1..numRequests, fn _n ->
+          # Randomly select num_requests nodes from the list as destinations
+          counter_each_request = Enum.map(1..num_requests, fn _n ->
             # Set the counter to be zero in the beginning,
                 :ets.insert(:hops, {"counter", 0})
             # Select a destination randomly
@@ -90,7 +90,7 @@ defmodule Tapestry.CLI do
   end
 
   defp print_help_msg do
-    IO.puts "Usage: mix run application.exs numNodes numRequests"
+    IO.puts "Usage: mix run application.exs num_nodes num_requests"
 
     # IO.puts "\nAvailable topologies:"
     # Enum.each @topologies, &(IO.puts("- #{&1}"))
