@@ -40,10 +40,11 @@ defmodule Tapestry.CLI do
     # Populate the global ets' :pid_to_node and :node_to_pid
     Tapestry.Modules.encode_multiple(node_pids)
 
-    # Construct a global list of all the hashed pids
-    all_hash_list = Enum.reduce(node_pids,[], fn n, acc -> acc ++
-        [Enum.map(:ets.lookup(:pid_to_node, n), fn {_, hash} -> hash end)] end)
-    all_hash_list = List.flatten(all_hash_list)
+    # Construct a list of all the hashed pids
+    all_hash_list = Enum.map(node_pids, fn pid ->
+      [{_pid, hash}] = :ets.lookup(:pid_to_node, pid)
+      hash
+    end)
 
     # Construct a list of each nodes with probable neighbours
     neighbours = Tapestry.Modules.build_routing(all_hash_list)
