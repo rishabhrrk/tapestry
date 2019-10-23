@@ -16,7 +16,7 @@ defmodule Tapestry.CLI do
       exit :shutdown
     end
 
-    node_nodes = args |> Enum.at(0) |> String.to_integer
+    num_nodes = Enum.at(args, 0) |> String.to_integer
     num_requests = Enum.at(args, 1) |> String.to_integer
 
     # Start all nodes

@@ -38,7 +38,7 @@ defmodule Tapestry.Node do
       :ets.insert(:hops, {"counter",counter+1})
 
       #find hash of source
-      source = :ets.lookup(:pid_to_node, self())
+      source = :ets.lookup(:pid_to_hash, self())
       [{_,source_hash}] = source
       # IO.puts("source")
       # IO.inspect source_hash
@@ -57,7 +57,7 @@ defmodule Tapestry.Node do
         # IO.inspect :ets.lookup(:hops, "counter")
         {:reply, state, state}
       else
-        pid = Enum.map(:ets.lookup(:node_to_pid, value_at_index), fn {_, pid} -> pid end)
+        pid = Enum.map(:ets.lookup(:hash_to_pid, value_at_index), fn {_, pid} -> pid end)
         GenServer.call(Enum.at(pid, 0), {:destination, destination_hash})
       end
       # IO.inspect(value_at_index)

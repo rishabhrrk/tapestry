@@ -1,6 +1,5 @@
 defmodule Tapestry.Modules do
   def encode_multiple(pids) do
-    all_hash_list = []
     Enum.each(pids, fn pid ->
       hash = encode_single(inspect(pid))
       :ets.insert(:pid_to_hash, {pid, hash})
