@@ -30,20 +30,16 @@ defmodule Tapestry.Node do
   # cast function for hopping
   @impl true
   def handle_call({:destination, destination_hash}, _from, state) do
-    counter = Enum.at(Enum.map(:ets.lookup(:hops, "counter"), fn {_, count} -> count end),0)
-    # counter = 0
-    # IO.inspect counter
+    [{_, counter}] = :ets.lookup(:hops, "counter")
+    
     if counter < 10 do
-      # updating the counter
-      :ets.insert(:hops, {"counter",counter+1})
+      # Increment the counter
+      :ets.insert(:hops, {"counter", counter + 1})
 
-      #find hash of source
       source = :ets.lookup(:pid_to_hash, self())
       [{_,source_hash}] = source
-      # IO.puts("source")
-      # IO.inspect source_hash
-
-      #find how many characters are common between source and destination
+      
+      # Find how many characters are common between source and destination
       common_length = String.length(Tapestry.Modules.matching(source_hash, destination_hash))
       routing_table = state[:routing_table]
       value_at_index = routing_table[{common_length, String.at(destination_hash,common_length)}]
