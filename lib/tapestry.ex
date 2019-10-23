@@ -17,7 +17,6 @@ defmodule Tapestry.CLI do
     end
 
     node_nodes = args |> Enum.at(0) |> String.to_integer
-
     num_requests = Enum.at(args, 1) |> String.to_integer
 
     # Start all nodes
@@ -28,21 +27,21 @@ defmodule Tapestry.CLI do
       |> Enum.map(fn {_, pid, :worker, [Tapestry.Node]} -> pid end)
 
     # Create a global ets for pid to node_id mapping
-    :ets.new(:pid_to_node, [:set, :public, :named_table])
+    :ets.new(:pid_to_hash, [:set, :public, :named_table])
 
     # Create a global ets for node_id to pid mapping
-    :ets.new(:node_to_pid, [:set, :public, :named_table])
+    :ets.new(:hash_to_pid, [:set, :public, :named_table])
 
     # Create a global ets for maintaining the number of hops
     :ets.new(:hops, [:set, :public, :named_table])
     :ets.insert(:hops, {"counter",0})
 
-    # Populate the global ets' :pid_to_node and :node_to_pid
+    # Populate the global ets' :pid_to_hash and :hash_to_pid
     Tapestry.Modules.encode_multiple(node_pids)
 
     # Construct a list of all the hashed pids
     all_hash_list = Enum.map(node_pids, fn pid ->
-      [{_pid, hash}] = :ets.lookup(:pid_to_node, pid)
+      [{_pid, hash}] = :ets.lookup(:pid_to_hash, pid)
       hash
     end)
 
@@ -51,7 +50,7 @@ defmodule Tapestry.CLI do
 
     # Set the routing table in the state of each node
     Enum.each(routing_tables, fn {node, routing_table} ->
-      [{_node, pid}] = :ets.lookup(:node_to_pid, node)
+      [{_node, pid}] = :ets.lookup(:hash_to_pid, node)
       GenServer.call(pid, {:set_routing_table, routing_table})
     end)
 
@@ -72,7 +71,7 @@ defmodule Tapestry.CLI do
                   |> Enum.reject(&(&1 == pid))
                 random_destination =
                   Enum.random(destination_list)
-                destination = :ets.lookup(:pid_to_node,
+                destination = :ets.lookup(:pid_to_hash,
                   random_destination)
                 [{_, destination_hash}] = destination
             # Call worker node with a destination as message
